@@ -48,16 +48,29 @@ class MaskingService : Service(), SensorEventListener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(NOTIF_ID, buildNotification("校准中，请贴紧床板保持不动…"))
+        Log.i("SnoreMask", "onStartCommand called")
+        try {
+            startForeground(NOTIF_ID, buildNotification("校准中，请贴紧床板保持不动…"))
+            Log.i("SnoreMask", "startForeground succeeded")
+        } catch (e: Exception) {
+            Log.e("SnoreMask", "startForeground failed", e)
+        }
         Thread {
-            val pass = runCalibration()
-            if (pass) {
-                updateNotification("运行中 — 屏蔽呼噜声")
-                startMaskingLoop()
-            } else {
-                updateNotification("校准失败：床架不传振，建议用耳塞")
-                Thread.sleep(3000)
-                stopSelf()
+            try {
+                Log.i("SnoreMask", "Calibration thread started")
+                val pass = runCalibration()
+                Log.i("SnoreMask", "Calibration result: $pass")
+                if (pass) {
+                    updateNotification("运行中 — 屏蔽呼噜声")
+                    startMaskingLoop()
+                } else {
+                    updateNotification("校准失败：床架不传振，建议用耳塞")
+                    Thread.sleep(3000)
+                    stopSelf()
+                }
+            } catch (e: Exception) {
+                Log.e("SnoreMask", "Error in calibration thread", e)
+                updateNotification("出错了: ${e.message}")
             }
         }.start()
         return START_STICKY

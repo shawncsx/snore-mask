@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -52,7 +53,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startMasking() {
-        startForegroundService(Intent(this, MaskingService::class.java))
-        Toast.makeText(this, "校准中，请将手机贴紧床板保持不动…", Toast.LENGTH_LONG).show()
+        Log.i("SnoreMask", "Starting MaskingService")
+        try {
+            startForegroundService(Intent(this, MaskingService::class.java))
+            Toast.makeText(this, "校准中，请将手机贴紧床板保持不动…", Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Log.e("SnoreMask", "Failed to start service", e)
+            Toast.makeText(this, "启动失败: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 }

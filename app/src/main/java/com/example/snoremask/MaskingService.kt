@@ -192,6 +192,18 @@ class MaskingService : Service(), SensorEventListener {
         return energy
     }
 
+    // ========== 棕噪声生成 ==========
+    private var brownNoiseState = 0f
+    private fun generateBrownNoise(size: Int, gain: Float): FloatArray {
+        val out = FloatArray(size)
+        for (i in 0 until size) {
+            val white = (Math.random() * 2 - 1).toFloat()
+            brownNoiseState = (brownNoiseState + 0.02f * white).coerceIn(-1f, 1f)
+            out[i] = brownNoiseState * gain
+        }
+        return out
+    }
+
     // ========== 加速度计主循环 ==========
     private fun startVibLoop() {
         isRunning = true
@@ -209,8 +221,11 @@ class MaskingService : Service(), SensorEventListener {
                     val maskFrame = synth.nextFrame()
                     val residual = maskFrame.map { it.toDouble() * it }.sum() * 0.01
                     val gained = agc.process(maskFrame, residual)
-                    val limited = FloatArray(gained.size) { gained[it].coerceIn(-0.89f, 0.89f) }
-                    audioTrack.write(limited, 0, limited.size, AudioTrack.WRITE_BLOCKING)
+                    val brownNoise = generateBrownNoise(gained.size, 0.15f)
+                    val mixed = FloatArray(gained.size) {
+                        (gained[it] + brownNoise[it]).coerceIn(-0.89f, 0.89f)
+                    }
+                    audioTrack.write(mixed, 0, mixed.size, AudioTrack.WRITE_BLOCKING)
                 }
             }
         }.start()
@@ -265,8 +280,11 @@ class MaskingService : Service(), SensorEventListener {
                     val maskFrame = synth.nextFrame()
                     val residual = maskFrame.map { it.toDouble() * it }.sum() * 0.01
                     val gained = agc.process(maskFrame, residual)
-                    val limited = FloatArray(gained.size) { gained[it].coerceIn(-0.89f, 0.89f) }
-                    audioTrack.write(limited, 0, limited.size, AudioTrack.WRITE_BLOCKING)
+                    val brownNoise = generateBrownNoise(gained.size, 0.15f)
+                    val mixed = FloatArray(gained.size) {
+                        (gained[it] + brownNoise[it]).coerceIn(-0.89f, 0.89f)
+                    }
+                    audioTrack.write(mixed, 0, mixed.size, AudioTrack.WRITE_BLOCKING)
                 }
             }
         }.start()

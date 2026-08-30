@@ -112,7 +112,8 @@ class MaskingService : Service(), SensorEventListener {
         val normalizedPeak = if (variance > 1e-10f) maxCorr / variance else 0f
 
         Log.i("SnoreMask", "Calib: normalizedPeak=$normalizedPeak, variance=$variance, samples=${buffer.size}")
-        return normalizedPeak > 0.3f
+        Log.i("SnoreMask", "Calib: normalizedPeak=$normalizedPeak, threshold=0.15")
+        return normalizedPeak > 0.15f
     }
 
     private fun startMaskingLoop() {

@@ -174,16 +174,15 @@ class MaskingService : Service(), SensorEventListener {
     }
 
     private fun bandEnergy(buf: FloatArray, fLow: Float, fHigh: Float): Float {
-        // 简易 DFT 计算频段能量
         val n = buf.size
-        val fftSize = min(n, 16000)
+        val fftSize = minOf(n, 16000)
         var energy = 0f
         for (k in 0 until fftSize / 2) {
-            val freq = k.toFloat() * SAMPLE_RATE / fftSize
+            val freq = k.toFloat() * SAMPLE_RATE.toFloat() / fftSize.toFloat()
             if (freq < fLow || freq > fHigh) continue
             var re = 0f; var im = 0f
             for (i in 0 until fftSize) {
-                val angle = 2.0 * Math.PI * k * i / fftSize
+                val angle = 2.0 * Math.PI * k * i / fftSize.toDouble()
                 re += buf[i] * Math.cos(angle).toFloat()
                 im -= buf[i] * Math.sin(angle).toFloat()
             }

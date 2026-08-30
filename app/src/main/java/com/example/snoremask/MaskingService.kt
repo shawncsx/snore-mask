@@ -108,22 +108,24 @@ class MaskingService : Service(), SensorEventListener {
         sensorManager.registerListener(this, sensor, SENSOR_RATE_US)
         audioTrack.play()
 
-        Thread {
-            while (isRunning) {
-                val vibFrame = vibBuffer.readFrame(1024)
-                val clean = Preprocess.process(vibFrame)
-                val (f0, conf) = yin.detect(clean)
-                if (conf > 0.5f) {
-                    currentF0 = f0
-                    synth.updateF0(f0)
+        object : Thread("MaskingLoop") {
+            override fun run() {
+                while (isRunning) {
+                    val vibFrame = vibBuffer.readFrame(1024)
+                    val clean = Preprocess.process(vibFrame)
+                    val (f0, conf) = yin.detect(clean)
+                    if (conf > 0.5f) {
+                        currentF0 = f0
+                        synth.updateF0(f0)
+                    }
+                    val maskFrame = synth.nextFrame()
+                    val residual = maskFrame.map { it.toDouble() * it }.sum() * 0.01
+                    val gained = agc.process(maskFrame, residual)
+                    val limited = FloatArray(gained.size) { gained[it].coerceIn(-0.89f, 0.89f) }
+                    audioTrack.write(limited, 0, limited.size, AudioTrack.WRITE_BLOCKING)
                 }
-                val maskFrame = synth.nextFrame()
-                val residual = maskFrame.map { it.toDouble() * it }.sum() * 0.01
-                val gained = agc.process(maskFrame, residual)
-                val limited = FloatArray(gained.size) { gained[it].coerceIn(-0.89f, 0.89f) }
-                audioTrack.write(limited, 0, limited.size, AudioTrack.WRITE_BLOCKING)
             }
-        }, "MaskingLoop").start()
+        }.start()
     }
 
     override fun onSensorChanged(event: SensorEvent) {

@@ -17,7 +17,8 @@ class MainActivity : AppCompatActivity() {
     private val REQ_CODE = 100
     private val perms = mutableListOf(
         Manifest.permission.BODY_SENSORS,
-        Manifest.permission.WAKE_LOCK
+        Manifest.permission.WAKE_LOCK,
+        Manifest.permission.RECORD_AUDIO
     ).apply {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             add(Manifest.permission.POST_NOTIFICATIONS)
